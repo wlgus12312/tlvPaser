@@ -49,18 +49,17 @@ public class TLVParser {
 		TLVResultNBytePosition parseOne;
 		int tlvIndex = 0;
 		byte[] byteArray = byteArrayOrg;
-		int nPoint = 0;
-		int byteArrayPosition;
-		
+		int byteArrayPosition=0;
+		int ndept = 0;
+
 		do {
-			nPoint=0;
+			String outPut = "";
 			int deptint = dept;
 			String tapDept = "";
 			{
 		
-				String outPut = "";
 				ValueType valueType = ValueType.PRIMITIVE;
-				byteArrayPosition = tlvIndex + byteArrayPosition2;
+				byteArrayPosition = tlvIndex; //+ byteArrayPosition2;
 				int tSize = 0;
 				int lSize = 0;
 				int vSize = 0;
@@ -79,12 +78,11 @@ public class TLVParser {
 					tagString += GaiaUtils.convertByteToHexaString(byteArray[i]);
 				}
 				byteArrayPosition += tSize;
+				System.out.println("태그 이후의 바이트어레이포지션 = " + byteArrayPosition);
 				if (byteArray.length == byteArrayPosition) {
 					//throw new UbiveloxException("Length Range is not exist");
 				} else {
 					lSize = getLengthSize(byteArray, byteArrayPosition);
-					//렝스의 길이 조회
-					String temp = GaiaUtils.convertByteToHexaString(byteArray[byteArrayPosition]);
 					//byteArrayPosition = ((tSize + lSize) / 2) - 1 + tlvIndex;
 					for (int i = 0; i < deptint; i++) {
 						tapDept += "\t";
@@ -92,15 +90,17 @@ public class TLVParser {
 					if(lSize == 0) {
 						//lengthString = "00";
 					}else {
-					
+						
 						for (int i = byteArrayPosition; i < byteArrayPosition + tSize + lSize -1; i++) {
 							lengthString += GaiaUtils.convertByteToHexaString(byteArray[i]);
+							System.out.println("랭스 = " + i);
 						}
 						//outPut += tapDept + hexString.substring(0, tSize) + "\t" + hexString.substring(tSize, tSize + lSize);
 					}
-					byteArrayPosition = ((tSize + lSize)) - 1 + tlvIndex;
-					System.out.println(byteArrayPosition);
+					byteArrayPosition += ((tSize + lSize)) - 1;
+					System.out.println("렝스 이후의 바이트어레이포지션 = " + byteArrayPosition);
 					outPut += tapDept + tagString + "\t" + lengthString;
+					System.out.println(outPut);
 				}
 				
 				//if (byteArray[byteArrayPosition] == 0) {
@@ -115,35 +115,25 @@ public class TLVParser {
 						throw new UbiveloxException("Value Range is not exist");
 					}
 					//vSize = byteArray[byteArrayPosition] * 2;
-					vSize = byteArray[byteArrayPosition];
-					System.out.println("vSize = " + vSize);
+					vSize = byteArray[byteArrayPosition-1];
+					System.out.println("vSIze = " + vSize);
 					//hexString.length() > byteArray.length
 					if ((tSize + lSize + vSize) > byteArray.length+1) {
 						throw new UbiveloxException("Value Range is not enough");
 					}
 
 					if (valueType == ValueType.PRIMITIVE) {
-						
-						System.out.println("시작" + (byteArrayPosition+1));
-						System.out.println("끝" + (byteArrayPosition +(tSize + lSize + vSize)-1));
-						System.out.println("태그"+tSize);
-						System.out.println("랭스"+lSize);
-						System.out.println("밸류"+vSize);
-						for (int i = (byteArrayPosition+1); i < byteArrayPosition +(tSize + lSize + vSize)-1; i++) {
+						for (int i = (byteArrayPosition); i < (byteArrayPosition+(tSize + lSize + vSize))-2; i++) {
 							valueString += GaiaUtils.convertByteToHexaString(byteArray[i]);
 							System.out.println(valueString + " : " + i);
 						}
-						
 						//outPut +=  "\t" + hexString.substring((tSize + lSize), (tSize + lSize + vSize));
 						outPut +=  "\t" + valueString;
-						nPoint=1;
-						
 					} else {
 						deptint++;
 						//valueValue = byteToHexaString(byteBuffer.get(byteArray, (tSize + lSize), (tSize + lSize + vSize)));
 						//outPut += "\n" + parse1(hexString.substring((tSize + lSize), (tSize + lSize + vSize)), deptint);
-						nPoint=1;
-						outPut += "2" + parse1(byteArray, deptint, byteArrayPosition);
+						outPut += "\n" + parse1(byteArray, deptint, byteArrayPosition);
 					}
 					//parseOne = new TLVResultNBytePosition(outPut, byteArrayPosition + (vSize / 2));
 					parseOne = new TLVResultNBytePosition(outPut, (byteArrayPosition + (vSize)));
@@ -153,12 +143,14 @@ public class TLVParser {
 				}
 			}
 			
-			result += (nPoint == 0 ? "" : "\n") + parseOne.tlvResult;
-			
+			result += (ndept == 0 ? "" : "\n") + parseOne.tlvResult;
+			System.out.println(result);
 			//hexStringIndex = parseOne.byteArrayPosition * 2 + 2;
+			System.out.println("파스원 바이트포지션"+parseOne.byteArrayPosition);
 			byteArrayPosition = parseOne.byteArrayPosition;
 			//hexString = hexStringOrg.substring(hexStringIndex);
 		//} while (!hexString.isEmpty());
+			ndept++;
 		} while (tlvIndex < byteArray.length-1);
 		
 		return result;
