@@ -115,7 +115,7 @@ public class TLVParser {
 						throw new UbiveloxException("Value Range is not exist");
 					}
 					//vSize = byteArray[byteArrayPosition] * 2;
-					vSize = byteArray[byteArrayPosition+1];
+					vSize = byteArray[byteArrayPosition];
 					System.out.println("vSize = " + vSize);
 					//hexString.length() > byteArray.length
 					if ((tSize + lSize + vSize) > byteArray.length+1) {
@@ -136,27 +136,30 @@ public class TLVParser {
 						
 						//outPut +=  "\t" + hexString.substring((tSize + lSize), (tSize + lSize + vSize));
 						outPut +=  "\t" + valueString;
+						nPoint=1;
 						
 					} else {
 						deptint++;
 						//valueValue = byteToHexaString(byteBuffer.get(byteArray, (tSize + lSize), (tSize + lSize + vSize)));
 						//outPut += "\n" + parse1(hexString.substring((tSize + lSize), (tSize + lSize + vSize)), deptint);
+						nPoint=1;
 						outPut += "2" + parse1(byteArray, deptint, byteArrayPosition);
-						
 					}
 					//parseOne = new TLVResultNBytePosition(outPut, byteArrayPosition + (vSize / 2));
 					parseOne = new TLVResultNBytePosition(outPut, (byteArrayPosition + (vSize)));
 					//tlvIndex += (tSize + lSize + vSize) / 2;
 					tlvIndex += (tSize + lSize + vSize);
+					System.out.println("tlvIndex = "+ tlvIndex);
 				}
 			}
+			
 			result += (nPoint == 0 ? "" : "\n") + parseOne.tlvResult;
-			nPoint=1;
+			
 			//hexStringIndex = parseOne.byteArrayPosition * 2 + 2;
 			byteArrayPosition = parseOne.byteArrayPosition;
 			//hexString = hexStringOrg.substring(hexStringIndex);
 		//} while (!hexString.isEmpty());
-		} while (tlvIndex < byteArray.length);
+		} while (tlvIndex < byteArray.length-1);
 		
 		return result;
 	}
