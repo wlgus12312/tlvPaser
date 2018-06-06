@@ -166,6 +166,7 @@ public class TLVParser {
 			if (byteArrPos + 1 >= byteArray.length) {
 				throw new UbiveloxException("Length is not enough");
 			}
+			
 		}
 
 		return lSize;
