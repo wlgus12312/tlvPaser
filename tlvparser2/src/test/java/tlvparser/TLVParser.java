@@ -49,15 +49,16 @@ public class TLVParser {
 		TLVResultNBytePosition parseOne;
 		int tlvIndex = 0;
 		byte[] byteArray = byteArrayOrg;
-		
+		int nPoint = 0;
 		int byteArrayPosition;
-		String outPut = "";
 		
 		do {
+			nPoint=0;
 			int deptint = dept;
 			String tapDept = "";
 			{
 		
+				String outPut = "";
 				ValueType valueType = ValueType.PRIMITIVE;
 				byteArrayPosition = tlvIndex + byteArrayPosition2;
 				int tSize = 0;
@@ -66,58 +67,42 @@ public class TLVParser {
 				String tagString = "";
 				String lengthString = "";
 				String valueString = "";
-				
-				System.out.println("qq"+byteArrayPosition);
-				
 				// primitive와 constructed 구분
 				if (((byteArray[byteArrayPosition]) & 0b0010_0000) == 0b0010_0000) {
 					valueType = ValueType.CONSTRUCTED;
-					
 				} else {
 					valueType = ValueType.PRIMITIVE;
 				}
-
 				tSize = getTagSize(byteArray, byteArrayPosition);
 				//byteArrayPosition += tSize / 2;
-				
 				for (int i = byteArrayPosition; i < byteArrayPosition+tSize; i++) {
 					tagString += GaiaUtils.convertByteToHexaString(byteArray[i]);
 				}
-				System.out.println(tagString);
-				
 				byteArrayPosition += tSize;
-				
 				if (byteArray.length == byteArrayPosition) {
-					throw new UbiveloxException("Length Range is not exist");
-
+					//throw new UbiveloxException("Length Range is not exist");
 				} else {
-
 					lSize = getLengthSize(byteArray, byteArrayPosition);
 					//렝스의 길이 조회
 					String temp = GaiaUtils.convertByteToHexaString(byteArray[byteArrayPosition]);
 					//byteArrayPosition = ((tSize + lSize) / 2) - 1 + tlvIndex;
-					
 					for (int i = 0; i < deptint; i++) {
 						tapDept += "\t";
 					}
-					
 					if(lSize == 0) {
-						lengthString = "00";
-						
+						//lengthString = "00";
 					}else {
 					
 						for (int i = byteArrayPosition; i < byteArrayPosition + tSize + lSize -1; i++) {
 							lengthString += GaiaUtils.convertByteToHexaString(byteArray[i]);
 						}
-						System.out.println(lengthString);
 						//outPut += tapDept + hexString.substring(0, tSize) + "\t" + hexString.substring(tSize, tSize + lSize);
 					}
 					byteArrayPosition = ((tSize + lSize)) - 1 + tlvIndex;
-					
+					System.out.println(byteArrayPosition);
 					outPut += tapDept + tagString + "\t" + lengthString;
 				}
 				
-				// length가 0이면 val없이 output
 				//if (byteArray[byteArrayPosition] == 0) {
 				if (lSize == 0) {
 					parseOne = new TLVResultNBytePosition(outPut, byteArrayPosition);
@@ -130,7 +115,8 @@ public class TLVParser {
 						throw new UbiveloxException("Value Range is not exist");
 					}
 					//vSize = byteArray[byteArrayPosition] * 2;
-					vSize = byteArray[byteArrayPosition];
+					vSize = byteArray[byteArrayPosition+1];
+					System.out.println("vSize = " + vSize);
 					//hexString.length() > byteArray.length
 					if ((tSize + lSize + vSize) > byteArray.length+1) {
 						throw new UbiveloxException("Value Range is not enough");
@@ -138,13 +124,19 @@ public class TLVParser {
 
 					if (valueType == ValueType.PRIMITIVE) {
 						
-						for (int i = byteArrayPosition+1; i < byteArrayPosition+(tSize + lSize + vSize) -1; i++) {
+						System.out.println("시작" + (byteArrayPosition+1));
+						System.out.println("끝" + (byteArrayPosition +(tSize + lSize + vSize)-1));
+						System.out.println("태그"+tSize);
+						System.out.println("랭스"+lSize);
+						System.out.println("밸류"+vSize);
+						for (int i = (byteArrayPosition+1); i < byteArrayPosition +(tSize + lSize + vSize)-1; i++) {
 							valueString += GaiaUtils.convertByteToHexaString(byteArray[i]);
+							System.out.println(valueString + " : " + i);
 						}
-						System.out.println(valueString);
 						
 						//outPut +=  "\t" + hexString.substring((tSize + lSize), (tSize + lSize + vSize));
 						outPut +=  "\t" + valueString;
+						
 					} else {
 						deptint++;
 						//valueValue = byteToHexaString(byteBuffer.get(byteArray, (tSize + lSize), (tSize + lSize + vSize)));
@@ -153,19 +145,17 @@ public class TLVParser {
 						
 					}
 					//parseOne = new TLVResultNBytePosition(outPut, byteArrayPosition + (vSize / 2));
-					System.out.println(outPut);
 					parseOne = new TLVResultNBytePosition(outPut, (byteArrayPosition + (vSize)));
 					//tlvIndex += (tSize + lSize + vSize) / 2;
 					tlvIndex += (tSize + lSize + vSize);
 				}
 			}
-			result += (byteArrayPosition != 0 ? "" : "\n") + parseOne.tlvResult;
+			result += (nPoint == 0 ? "" : "\n") + parseOne.tlvResult;
+			nPoint=1;
 			//hexStringIndex = parseOne.byteArrayPosition * 2 + 2;
 			byteArrayPosition = parseOne.byteArrayPosition;
-			System.out.println("vv"+byteArrayPosition);
 			//hexString = hexStringOrg.substring(hexStringIndex);
 		//} while (!hexString.isEmpty());
-			
 		} while (tlvIndex < byteArray.length);
 		
 		return result;
@@ -191,7 +181,6 @@ public class TLVParser {
 				}
 			}
 		}
-
 		//byteArrPos = tSize / 2;
 		byteArrPos = tSize;
 		return tSize;
@@ -217,64 +206,8 @@ public class TLVParser {
 		return lSize;
 	}
 
-	public static TLVResultNBytePosition parseOneTLV(final String hexString) throws UbiveloxException, GaiaException {
-
-		ValueType valueType = ValueType.PRIMITIVE;
-		String outPut = "";
-
-		int tSize = 0;
-		int lSize = 0;
-		int vSize = 0;
-		int byteArrayPosition = 0;
-
-		// checkNLO(hexString, hexString == null ? 0 : hexString.length(),
-		// "HexaString");
-
-		byte[] byteArray = GaiaUtils.convertHexaStringToByteArray(hexString);
-
-		tSize = getTagSize(byteArray, byteArrayPosition);
-		byteArrayPosition = tSize / 2;
-
-		if (byteArray.length == byteArrayPosition) {
-			throw new UbiveloxException("Length Range is not exist");
-
-		} else {
-			// primitive와 constructed 구분
-			if (((byteArray[byteArrayPosition]) & 0b0010_0000) == 0b0010_0000) {
-				valueType = ValueType.CONSTRUCTED;
-			} else {
-				valueType = ValueType.PRIMITIVE;
-			}
-
-			lSize = getLengthSize(byteArray, byteArrayPosition);
-			byteArrayPosition = ((tSize + lSize) / 2) - 1;
-
-			outPut += hexString.substring(0, tSize) + "\t" + hexString.substring(tSize, tSize + lSize);
-		}
-		// length가 0이면 val없이 output
-		if (byteArray[byteArrayPosition] == 0) {
-			return new TLVResultNBytePosition(outPut, byteArrayPosition);
-		}
-
-		if ((tSize + lSize) == hexString.length()) {
-			throw new UbiveloxException("Value Range is not exist");
-		}
-
-		vSize = byteArray[byteArrayPosition] * 2;
-		// System.out.println("vSize : " + vSize);
-
-		if ((tSize + lSize + vSize) > hexString.length()) {
-			throw new UbiveloxException("Value Range is not enough");
-		}
-
-		/*
-		 *
-		 * value 처리부분 1. return 하기 전에 다음 헥사값이 존재할 때, 현재 TLV의 다음 HexString부터 substring하여
-		 * 다시 parse를 돈다. 2. parse를 다시 돌릴 때, 다음의 HexString과 byteArrayPosition 값을 파라미터로
-		 * 넘겨줘야 한다.
-		 */
-
-		outPut += "\t" + hexString.substring((tSize + lSize), (tSize + lSize + vSize));
-		return new TLVResultNBytePosition(outPut, byteArrayPosition + (vSize / 2));
-	}
+	
+	
+	
+	
 }
